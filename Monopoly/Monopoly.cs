@@ -9,85 +9,60 @@ namespace Monopoly
     class Monopoly
     {
         public List<Tuple<string, int>> players = new List<Tuple<string, int>>();
-        public List<Tuple<string, Monopoly.Type, int, bool>> fields = new List<Tuple<string, Type, int, bool>>();
-        public Monopoly(string[] p, int v)
+        public List<Field> fields = new List<Field>()
         {
-            for (int i = 0; i < v; i++)
+            new Field("Ford", Type.AUTO, 0, false), 
+            new Field("MCDonald", Type.FOOD, 0, false),
+            new Field("Lamoda", Type.CLOTHER, 0, false),
+            new Field("Air Baltic", Type.TRAVEL, 0, false),
+            new Field("Nordavia", Type.TRAVEL, 0, false),
+            new Field("Prison", Type.PRISON, 0, false),
+            new Field("MCDonald", Type.FOOD, 0, false),
+            new Field("TESLA", Type.AUTO, 0, false)
+        };
+
+        public Monopoly(string[] p)
+        {
+            foreach (var player in p)
             {
-                players.Add(new Tuple<string,int>(p[i], 6000));     
+                players.Add(new Tuple<string,int>(player, 6000));     
             }
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("Ford", Monopoly.Type.AUTO, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("MCDonald", Monopoly.Type.FOOD, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("Lamoda", Monopoly.Type.CLOTHER, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("Air Baltic", Monopoly.Type.TRAVEL, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("Nordavia", Monopoly.Type.TRAVEL, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("Prison", Monopoly.Type.PRISON, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("MCDonald", Monopoly.Type.FOOD, 0, false));
-            fields.Add(new Tuple<string, Monopoly.Type, int, bool>("TESLA", Monopoly.Type.AUTO, 0, false));
         }
 
-        internal List<Tuple<string, int>> GetPlayersList()
-        {
-            return players;
-        }
+        internal List<Tuple<string, int>> GetPlayersList() => players;
 
-        internal enum Type
-        {
-            AUTO,
-            FOOD,
-            CLOTHER,
-            TRAVEL,
-            PRISON,
-            BANK
-        }
+        internal List<Field> GetFieldsList() => fields;
 
-        internal List<Tuple<string, Monopoly.Type, int, bool>> GetFieldsList()
-        {
-            return fields;
-        }
+        internal Field GetFieldByName(string name) => fields.FirstOrDefault(x => x.Name == name);
 
-        internal Tuple<string, Type, int, bool> GetFieldByName(string v)
+        internal bool Buy(int v, Field field)
         {
-            return (from p in fields where p.Item1 == v select p).FirstOrDefault();
-        }
+            if(field.OwnerId != 0)
+            {
+                return false;
+            }
 
-        internal bool Buy(int v, Tuple<string, Type, int, bool> k)
-        {
             var x = GetPlayerInfo(v);
-            int cash = 0;
-            switch(k.Item2)
+
+            switch(field.FieldType)
             {
                 case Type.AUTO:
-                    if (k.Item3 != 0)
-                        return false;
-                    cash = x.Item2 - 500;
-                    players[v - 1] = new Tuple<string, int>(x.Item1, cash);
+                    players[v - 1] = new Tuple<string, int>(x.Item1, x.Item2 - 500);
                     break;
                 case Type.FOOD:
-                    if (k.Item3 != 0)
-                        return false;
-                    cash = x.Item2 - 250;
-                    players[v - 1] = new Tuple<string, int>(x.Item1, cash);
+                    players[v - 1] = new Tuple<string, int>(x.Item1, x.Item2 - 250);
                     break;
                 case Type.TRAVEL:
-                    if (k.Item3 != 0)
-                        return false;
-                    cash = x.Item2 - 700;
-                    players[v - 1] = new Tuple<string, int>(x.Item1, cash);
+                    players[v - 1] = new Tuple<string, int>(x.Item1, x.Item2 - 700);
                     break;
                 case Type.CLOTHER:
-                    if (k.Item3 != 0)
-                        return false;
-                    cash = x.Item2 - 100;
-                    players[v - 1] = new Tuple<string, int>(x.Item1, cash);
+                    players[v - 1] = new Tuple<string, int>(x.Item1, x.Item2 - 100);
                     break;
                 default:
                     return false;
             }
-            int i = players.Select((item, index) => new { name = item.Item1, index = index })
-                .Where(n => n.name == x.Item1)
-                .Select(p => p.index).FirstOrDefault();
-            fields[i] = new Tuple<string, Type, int, bool>(k.Item1, k.Item2, v, k.Item4);
+            field.SetOwnedId(v);
+
              return true;
         }
 
@@ -96,38 +71,32 @@ namespace Monopoly
             return players[v - 1];
         }
 
-        internal bool Renta(int v, Tuple<string, Type, int, bool> k)
+        internal bool Renta(int v, Field k)
         {
+            if(k.OwnerId == 0)
+            {
+                return false;
+            }
+
             var z = GetPlayerInfo(v);
-            Tuple<string, int> o = null;
-            switch(k.Item2)
+            var o = GetPlayerInfo(k.OwnerId);
+
+            switch (k.FieldType)
             {
                 case Type.AUTO:
-                    if (k.Item3 == 0)
-                        return false;
-                    o =  GetPlayerInfo(k.Item3);
                     z = new Tuple<string, int>(z.Item1, z.Item2 - 250);
                     o = new Tuple<string, int>(o.Item1,o.Item2 + 250);
                     break;
                 case Type.FOOD:
-                    if (k.Item3 == 0)
-                        return false;
-                    o = GetPlayerInfo(k.Item3);
                     z = new Tuple<string, int>(z.Item1, z.Item2 - 250);
                     o = new Tuple<string, int>(o.Item1, o.Item2 + 250);
 
                     break;
                 case Type.TRAVEL:
-                    if (k.Item3 == 0)
-                        return false;
-                    o = GetPlayerInfo(k.Item3);
                     z = new Tuple<string, int>(z.Item1, z.Item2 - 300);
                     o = new Tuple<string, int>(o.Item1, o.Item2 + 300);
                     break;
                 case Type.CLOTHER:
-                    if (k.Item3 == 0)
-                        return false;
-                    o = GetPlayerInfo(k.Item3);
                     z = new Tuple<string, int>(z.Item1, z.Item2 - 100);
                     o = new Tuple<string, int>(o.Item1, o.Item2 + 1000);
 
@@ -143,8 +112,91 @@ namespace Monopoly
             }
             players[v - 1] = z;
             if(o != null)
-                players[k.Item3 - 1] = o;
+                players[k.OwnerId - 1] = o;
             return true;
         }
+    }
+
+    class Field
+    {
+        public Field(string name, Type type, int ownerId, bool boolfield)
+        {
+            _name = name;
+            _fieldType = type;
+            _ownerId = ownerId;
+            _boolfield = boolfield;
+        }
+
+        public string Name 
+        {
+            get
+            {
+               return _name;
+            }
+
+            private set
+            {
+                _name = value;
+            }
+        }
+
+        public Type FieldType
+        {
+            get
+            {
+                return _fieldType;
+            }
+
+            private set
+            {
+                _fieldType = value;
+            }
+        }
+
+        public int OwnerId
+        {
+            get
+            {
+                return _ownerId;
+            }
+
+            private set
+            {
+                _ownerId = value;
+            }
+        }
+
+        public bool Boolfield
+        {
+            get
+            {
+                return _boolfield;
+            }
+
+            private set
+            {
+                _boolfield = value;
+            }
+        }
+
+        public void SetOwnedId(int v)
+        {
+            OwnerId = v;
+        }
+
+        private string _name;
+        private Type _fieldType;
+        private int _ownerId;
+        private bool _boolfield;
+    }
+
+    internal enum Type
+    {
+        AUTO,
+        FOOD,
+        CLOTHER,
+        TRAVEL,
+        PRISON,
+        BANK
     }
 }
