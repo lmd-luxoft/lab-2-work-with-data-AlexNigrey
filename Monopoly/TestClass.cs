@@ -19,7 +19,7 @@ namespace Monopoly
                 new Tuple<string, int>("Alexander",6000)
             };
             Monopoly monopoly = new Monopoly(players);
-            Tuple<string, int>[] actualPlayers = monopoly.GetPlayersList().ToArray();
+            Player[] actualPlayers = monopoly.GetPlayersList().ToArray();
 
             Assert.AreEqual(expectedPlayers, actualPlayers);
         }

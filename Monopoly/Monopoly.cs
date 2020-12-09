@@ -6,7 +6,7 @@ namespace Monopoly
 {
     class Monopoly
     {
-        public List<Tuple<string, int>> players = new List<Tuple<string, int>>();
+        public List<Player> players = new List<Player>();
         public List<Field> fields = new List<Field>()
         {
             new Field("Ford", new AutoType(), 0, false), 
@@ -23,11 +23,11 @@ namespace Monopoly
         {
             foreach (var player in p)
             {
-                players.Add(new Tuple<string,int>(player, 6000));     
+                players.Add(new Player(player, 6000));
             }
         }
 
-        internal List<Tuple<string, int>> GetPlayersList() => players;
+        internal List<Player> GetPlayersList() => players;
 
         internal List<Field> GetFieldsList() => fields;
 
@@ -40,14 +40,13 @@ namespace Monopoly
                 return false;
             }
 
-            var x = GetPlayerInfo(index);
-            players[index - 1] = new Tuple<string, int>(x.Item1, x.Item2 - field.FieldType.BuyPrice);
+            players[index - 1].Pay(field.FieldType.BuyPrice);
             field.SetOwnedId(index);
 
             return true;
         }
 
-        internal Tuple<string, int> GetPlayerInfo(int v) => players[v - 1];
+        internal Player GetPlayerInfo(int v) => players[v - 1];
 
         internal bool Renta(int index, Field field)
         {
@@ -56,13 +55,15 @@ namespace Monopoly
                 return false;
             }
 
-            var z = GetPlayerInfo(index);
-            var o = GetPlayerInfo(field.OwnerId);
-            z = new Tuple<string, int>(z.Item1, z.Item2 - field.FieldType.RentaPrice);
-            o = new Tuple<string, int>(o.Item1, o.Item2 + field.FieldType.RentaPrice);
-            players[index - 1] = z;
-            if(o != null)
-                players[field.OwnerId - 1] = o;
+            var payer = GetPlayerInfo(index);
+            var seller = GetPlayerInfo(field.OwnerId);
+
+            payer.Pay(field.FieldType.RentaPrice);
+            seller.Sell(field.FieldType.RentaPrice);
+
+            players[index - 1] = payer;
+            if(seller != null)
+                players[field.OwnerId - 1] = seller;
 
             return true;
         }
